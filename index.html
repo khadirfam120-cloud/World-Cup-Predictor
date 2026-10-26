@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Cup 2026 Match Predictor</title>
+<style>
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --color-text-primary: #1f2328;
+  --color-text-secondary: #636c76;
+  --color-text-info: #185FA5;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f3f4f6;
+  --color-background-info: #e6f1fb;
+  --color-border-tertiary: #e1e4e8;
+  --color-border-secondary: #c9ced4;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text-primary: #e6e8eb;
+    --color-text-secondary: #9aa3ad;
+    --color-text-info: #7db7ee;
+    --color-background-primary: #1c1f23;
+    --color-background-secondary: #2a2e33;
+    --color-background-info: #1d3047;
+    --color-border-tertiary: #34393f;
+    --color-border-secondary: #484e56;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background: var(--color-background-primary); color: var(--color-text-primary); max-width: 900px; margin: 0 auto; padding: 1rem; }
+.wc-wrap { padding: 1rem 0; }
+.header { text-align: center; margin-bottom: 1.5rem; }
+.header h1 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+.header p { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+.badge { display: inline-block; background: var(--color-background-info); color: var(--color-text-info); font-size: 11px; padding: 2px 8px; border-radius: var(--border-radius-md); margin-bottom: 8px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 1rem; background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 4px; }
+.tab { flex: 1; padding: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-secondary); transition: all 0.15s; font-family: inherit; }
+.tab.active { background: var(--color-background-primary); color: var(--color-text-primary); box-shadow: 0 0 0 0.5px var(--color-border-tertiary); }
+.section { display: none; }
+.section.active { display: block; }
+.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.matchup-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: end; margin-bottom: 1rem; }
+.vs-label { font-size: 18px; color: var(--color-text-secondary); text-align: center; padding-bottom: 4px; }
+label.field-label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+select { width: 100%; font-size: 14px; padding: 8px 10px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); color: var(--color-text-primary); font-family: inherit; }
+.options-row { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+.checkbox-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-text-secondary); }
+.predict-btn { width: 100%; padding: 12px; background: #185FA5; color: #fff; border: none; border-radius: var(--border-radius-md); font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s; font-family: inherit; }
+.predict-btn:hover { background: #0C447C; }
+.result-area { margin-top: 1rem; }
+.result-title { font-size: 16px; font-weight: 500; text-align: center; margin-bottom: 1rem; color: var(--color-text-primary); }
+.bars { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: 110px 1fr 52px; align-items: center; gap: 8px; font-size: 13px; }
+.bar-label { font-weight: 500; text-align: right; color: var(--color-text-primary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { background: var(--color-background-secondary); border-radius: 6px; height: 20px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; width: 0%; }
+.bar-fill.home { background: #185FA5; }
+.bar-fill.draw { background: #BA7517; }
+.bar-fill.away { background: #A32D2D; }
+.bar-pct { font-weight: 500; font-size: 13px; color: var(--color-text-primary); }
+.verdict { margin-top: 1rem; font-size: 13px; color: var(--color-text-secondary); text-align: center; line-height: 1.5; }
+.verdict strong { color: var(--color-text-primary); }
+.ai-section { margin-top: 1rem; border-top: 0.5px solid var(--color-border-tertiary); padding-top: 1rem; }
+.ai-btn { width: 100%; padding: 10px; background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-size: 13px; color: var(--color-text-secondary); cursor: pointer; font-family: inherit; }
+.ai-btn:hover { background: var(--color-background-secondary); }
+.ai-output { margin-top: 0.75rem; font-size: 13px; color: var(--color-text-primary); line-height: 1.6; white-space: pre-wrap; min-height: 40px; }
+.ai-loading { color: var(--color-text-secondary); font-style: italic; }
+.group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.group-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+.group-title { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.group-team { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 3px 0; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); }
+.group-team:last-child { border-bottom: none; }
+.team-pts { font-weight: 500; font-size: 11px; color: var(--color-text-secondary); }
+.team-pts.leader { color: var(--color-text-info); }
+.results-list { display: flex; flex-direction: column; gap: 6px; }
+.result-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 12px; }
+.result-score { font-weight: 500; color: var(--color-text-primary); text-align: center; min-width: 50px; }
+.result-team { color: var(--color-text-secondary); }
+.result-team.winner { color: var(--color-text-primary); font-weight: 500; }
+.date-header { font-size: 12px; color: var(--color-text-secondary); margin: 10px 0 4px; font-weight: 500; }
+.lineup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lineup-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px; }
+.lineup-team { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; }
+.player-row { font-size: 12px; color: var(--color-text-secondary); padding: 2px 0; }
+.player-row span { color: var(--color-text-primary); }
+</style>
+</head>
+<body>
+<div class="wc-wrap">
+  <div class="header">
+    <div class="badge">FIFA World Cup 2026 · Live</div>
+    <h1>Match Predictor</h1>
+    <p>USA, Canada &amp; Mexico · Jun 11 – Jul 19, 2026</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="predict">📊 Predict</button>
+    <button class="tab" data-tab="standings">📋 Standings</button>
+    <button class="tab" data-tab="results">📅 Results</button>
+    <button class="tab" data-tab="tournament">🏆 Tournament</button>
+  </div>
+
+  <div id="tab-predict" class="section active">
+    <div class="card">
+      <div class="matchup-grid">
+        <div>
+          <label class="field-label" for="t1">Team 1</label>
+          <select id="t1"></select>
+        </div>
+        <div class="vs-label">vs</div>
+        <div>
+          <label class="field-label" for="t2">Team 2</label>
+          <select id="t2"></select>
+        </div>
+      </div>
+      <div class="options-row">
+        <label class="checkbox-row"><input type="checkbox" id="neutral" checked> Neutral venue</label>
+      </div>
+      <button class="predict-btn" id="predict-btn">Predict match</button>
+      <div class="result-area" id="result-area" style="display:none;">
+        <div class="result-title" id="result-title"></div>
+        <div class="bars">
+          <div class="bar-row">
+            <div class="bar-label" id="h-label">–</div>
+            <div class="bar-track"><div class="bar-fill home" id="h-bar"></div></div>
+            <div class="bar-pct" id="h-pct">–</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Draw</div>
+            <div class="bar-track"><div class="bar-fill draw" id="d-bar"></div></div>
+            <div class="bar-pct" id="d-pct">–</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" id="a-label">–</div>
+            <div class="bar-track"><div class="bar-fill away" id="a-bar"></div></div>
+            <div class="bar-pct" id="a-pct">–</div>
+          </div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+        <div class="ai-section">
+          <button class="ai-btn" id="ai-btn">✨ Get AI match analysis</button>
+          <div class="ai-output" id="ai-out"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="group-title">Key players to watch (WC 2026 squads)</div>
+      <div class="lineup-grid">
+        <div class="lineup-card"><div class="lineup-team" id="l1-title">Select team 1</div><div id="l1-players"></div></div>
+        <div class="lineup-card"><div class="lineup-team" id="l2-title">Select team 2</div><div id="l2-players"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-standings" class="section">
+    <div class="card">
+      <div class="group-title" style="margin-bottom:10px;">Group standings · Jun 16, 2026</div>
+      <div class="group-grid" id="standings-grid"></div>
+    </div>
+  </div>
+
+  <div id="tab-results" class="section">
+    <div class="card">
+      <div class="group-title" style="margin-bottom:10px;">All results so far</div>
+      <div class="results-list" id="results-list"></div>
+    </div>
+  </div>
+
+  <div id="tab-tournament" class="section">
+    <div class="card">
+      <div class="group-title">Tournament Forecast</div>
+      <div id="tournament-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LOGIT = {"mean":[1.4044,1.4799,1.4338,1.3749,1.4522,1.4759,0.2618],"scale":[0.5781,0.7122,0.8180,0.5805,0.7118,0.8728,0.4396],"coef":[[0.0836,0.1228,-0.2380,-0.0793,-0.1054,0.3553,-0.1049],[0.0134,-0.0515,-0.0724,0.0125,-0.0220,-0.0867,-0.0187],[-0.0970,-0.0713,0.3104,0.0668,0.1275,-0.2686,0.1236]],"intercept":[0.4531,-0.2567,-0.1964]};
+
+const WC_TEAMS_2026 = {
+  "Argentina":{"form_points":2.3,"form_goals_for":2.8,"form_goals_against":0.4,"group":"J","flag":"🇦🇷","key_players":["L. Messi (CF)","J. Álvarez (ST)","R. De Paul (CM)","E. Martínez (GK)","N. Molina (RB)"]},
+  "France":{"form_points":2.2,"form_goals_for":2.7,"form_goals_against":0.8,"group":"I","flag":"🇫🇷","key_players":["K. Mbappé (ST)","A. Griezmann (AM)","A. Tchouaméni (DM)","O. Giroud (ST)","M. Maignan (GK)"]},
+  "Brazil":{"form_points":1.9,"form_goals_for":2.0,"form_goals_against":1.0,"group":"C","flag":"🇧🇷","key_players":["Vinícius Jr. (LW)","Rodrygo (RW)","Casemiro (DM)","Marquinhos (CB)","Alisson (GK)"]},
+  "Germany":{"form_points":2.4,"form_goals_for":3.5,"form_goals_against":0.6,"group":"E","flag":"🇩🇪","key_players":["J. Wirtz (AM)","K. Havertz (ST)","L. Goretzka (CM)","A. Rüdiger (CB)","M. ter Stegen (GK)"]},
+  "Spain":{"form_points":2.0,"form_goals_for":2.5,"form_goals_against":0.5,"group":"H","flag":"🇪🇸","key_players":["L. Yamal (RW)","P. Pedri (CM)","A. Morata (ST)","R. Le Normand (CB)","U. Simón (GK)"]},
+  "England":{"form_points":1.9,"form_goals_for":2.1,"form_goals_against":0.5,"group":"L","flag":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","key_players":["J. Bellingham (AM)","H. Kane (ST)","B. Saka (RW)","P. Foden (LW)","J. Pickford (GK)"]},
+  "Portugal":{"form_points":2.0,"form_goals_for":2.4,"form_goals_against":0.8,"group":"K","flag":"🇵🇹","key_players":["C. Ronaldo (ST)","B. Silva (CM)","R. Leão (LW)","R. Dias (CB)","D. Costa (GK)"]},
+  "Netherlands":{"form_points":1.8,"form_goals_for":2.0,"form_goals_against":1.0,"group":"F","flag":"🇳🇱","key_players":["V. van Dijk (CB)","C. Gakpo (LW)","X. Simons (CM)","M. de Ligt (CB)","B. Verbruggen (GK)"]},
+  "Belgium":{"form_points":1.9,"form_goals_for":2.0,"form_goals_against":1.0,"group":"G","flag":"🇧🇪","key_players":["K. De Bruyne (CM)","R. Lukaku (ST)","J. Doku (LW)","T. Courtois (GK)","A. Theate (CB)"]},
+  "Italy":{"form_points":1.9,"form_goals_for":1.8,"form_goals_against":0.9,"group":"L","flag":"🇮🇹","key_players":["F. Chiesa (RW)","G. Scamacca (ST)","N. Barella (CM)","A. Bastoni (CB)","G. Donnarumma (GK)"]},
+  "Morocco":{"form_points":2.0,"form_goals_for":1.8,"form_goals_against":0.7,"group":"C","flag":"🇲🇦","key_players":["H. Ziyech (AM)","A. En-Nesyri (ST)","R. Hakimi (RB)","R. Amrabat (DM)","Y. Bono (GK)"]},
+  "Japan":{"form_points":2.0,"form_goals_for":1.8,"form_goals_against":0.8,"group":"F","flag":"🇯🇵","key_players":["D. Mitoma (LW)","H. Kubo (RW)","W. Endo (DM)","M. Yoshida (CB)","S. Gonda (GK)"]},
+  "United States":{"form_points":2.0,"form_goals_for":2.5,"form_goals_against":1.2,"group":"D","flag":"🇺🇸","key_players":["C. Pulisic (AM)","F. Balogun (ST)","Y. Adams (DM)","T. Adams (CM)","M. Turner (GK)"]},
+  "Mexico":{"form_points":1.8,"form_goals_for":1.8,"form_goals_against":0.5,"group":"A","flag":"🇲🇽","key_players":["H. Lozano (RW)","R. Jiménez (ST)","E. Álvarez (CM)","C. Salcedo (CB)","G. Ochoa (GK)"]},
+  "Canada":{"form_points":1.6,"form_goals_for":1.2,"form_goals_against":0.8,"group":"B","flag":"🇨🇦","key_players":["A. Davies (LB)","J. David (ST)","T. Buchanan (RW)","S. Johnston (CM)","M. Crepeau (GK)"]},
+  "South Korea":{"form_points":1.9,"form_goals_for":1.6,"form_goals_against":1.0,"group":"A","flag":"🇰🇷","key_players":["Son Heung-min (LW)","Lee Kang-in (AM)","Hwang Hee-chan (ST)","Kim Min-jae (CB)","Jo Hyeon-woo (GK)"]},
+  "Australia":{"form_points":1.5,"form_goals_for":1.4,"form_goals_against":1.0,"group":"D","flag":"🇦🇺","key_players":["M. Leckie (RW)","M. Duke (ST)","R. McGree (CM)","H. Souttar (CB)","M. Ryan (GK)"]},
+  "Senegal":{"form_points":1.8,"form_goals_for":1.6,"form_goals_against":0.9,"group":"I","flag":"🇸🇳","key_players":["S. Mané (LW)","I. Sarr (RW)","I. Gueye (CM)","K. Koulibaly (CB)","É. Mendy (GK)"]},
+  "Uruguay":{"form_points":1.6,"form_goals_for":1.2,"form_goals_against":0.8,"group":"H","flag":"🇺🇾","key_players":["L. Suárez (ST)","F. Valverde (CM)","D. Núñez (ST)","J. Giménez (CB)","F. Muslera (GK)"]},
+  "Colombia":{"form_points":1.7,"form_goals_for":1.8,"form_goals_against":0.9,"group":"K","flag":"🇨🇴","key_players":["L. Díaz (LW)","R. Falcao (ST)","M. Barrios (DM)","D. Sánchez (CB)","D. Ospina (GK)"]},
+  "Croatia":{"form_points":1.6,"form_goals_for":1.6,"form_goals_against":1.0,"group":"L","flag":"🇭🇷","key_players":["L. Modrić (CM)","M. Brozović (DM)","I. Perišić (LW)","J. Gvardiol (CB)","D. Livaković (GK)"]},
+  "Denmark":{"form_points":1.9,"form_goals_for":2.2,"form_goals_against":0.9,"group":"G","flag":"🇩🇰","key_players":["C. Eriksen (AM)","M. Damsgaard (LW)","R. Højlund (ST)","A. Christensen (CB)","K. Schmeichel (GK)"]},
+  "Switzerland":{"form_points":1.6,"form_goals_for":1.6,"form_goals_against":0.9,"group":"B","flag":"🇨🇭","key_players":["X. Shaqiri (AM)","B. Embolo (ST)","G. Xhaka (CM)","M. Akanji (CB)","Y. Sommer (GK)"]},
+  "Ecuador":{"form_points":1.5,"form_goals_for":1.4,"form_goals_against":0.8,"group":"E","flag":"🇪🇨","key_players":["E. Valencia (ST)","M. Caicedo (CM)","J. Sarmiento (LW)","P. Arboleda (CB)","H. Galíndez (GK)"]},
+  "Austria":{"form_points":1.9,"form_goals_for":2.2,"form_goals_against":0.8,"group":"J","flag":"🇦🇹","key_players":["M. Sabitzer (CM)","C. Baumgartner (AM)","M. Gregoritsch (ST)","D. Alaba (CB)","P. Pentz (GK)"]},
+  "Norway":{"form_points":1.8,"form_goals_for":2.4,"form_goals_against":0.8,"group":"I","flag":"🇳🇴","key_players":["E. Haaland (ST)","M. Ødegaard (AM)","A. Isak (ST)","L. Ajer (CB)","Ø. Nyland (GK)"]},
+  "Turkey":{"form_points":1.9,"form_goals_for":2.0,"form_goals_against":0.9,"group":"D","flag":"🇹🇷","key_players":["H. Çalhanoğlu (CM)","A. Yildiz (LW)","K. Akturkoglu (RW)","M. Demiral (CB)","A. Bayindir (GK)"]},
+  "Ghana":{"form_points":1.1,"form_goals_for":1.2,"form_goals_against":1.5,"group":"L","flag":"🇬🇭","key_players":["T. Partey (CM)","J. Ayew (ST)","A. Ayew (AM)","M. Salisu (CB)","J. Wollacott (GK)"]},
+  "Poland":{"form_points":1.5,"form_goals_for":1.6,"form_goals_against":1.3,"group":"G","flag":"🇵🇱","key_players":["R. Lewandowski (ST)","P. Zieliński (AM)","G. Krychowiak (DM)","J. Bednarek (CB)","W. Szczęsny (GK)"]},
+  "Scotland":{"form_points":1.8,"form_goals_for":1.8,"form_goals_against":1.0,"group":"C","flag":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","key_players":["A. Robertson (LB)","K. Tierney (CB)","J. McGinn (CM)","J. Dykes (ST)","A. Gunn (GK)"]},
+  "Sweden":{"form_points":1.5,"form_goals_for":2.0,"form_goals_against":1.3,"group":"F","flag":"🇸🇪","key_players":["A. Isak (ST)","V. Gyökeres (ST)","D. Kulusevski (RW)","L. Nilsson (CB)","R. Olsen (GK)"]},
+  "Czech Republic":{"form_points":1.5,"form_goals_for":1.8,"form_goals_against":1.1,"group":"A","flag":"🇨🇿","key_players":["P. Schick (ST)","T. Souček (CM)","V. Coufal (RB)","T. Kalas (CB)","J. Staněk (GK)"]},
+  "Egypt":{"form_points":1.5,"form_goals_for":1.5,"form_goals_against":0.8,"group":"G","flag":"🇪🇬","key_players":["M. Salah (RW)","M. Elneny (CM)","K. El Ahmadi (DM)","O. Elmohamady (RB)","M. El Shenawy (GK)"]},
+  "Iran":{"form_points":1.5,"form_goals_for":1.6,"form_goals_against":0.9,"group":"G","flag":"🇮🇷","key_players":["S. Azmoun (ST)","M. Taremi (ST)","A. Jahanbakhsh (RW)","E. Hajsafi (LB)","A. Beiranvand (GK)"]},
+  "Saudi Arabia":{"form_points":1.0,"form_goals_for":1.0,"form_goals_against":1.3,"group":"H","flag":"🇸🇦","key_players":["S. Al-Dawsari (LW)","F. Al-Buraikan (ST)","A. Al-Amri (CB)","M. Kanno (CM)","M. Al-Owais (GK)"]},
+  "South Africa":{"form_points":0.8,"form_goals_for":0.9,"form_goals_against":1.5,"group":"A","flag":"🇿🇦","key_players":["P. Tau (LW)","L. Brockie (ST)","B. Mothiba (ST)","T. Onyango (GK)","T. Zungu (CM)"]},
+  "Algeria":{"form_points":1.9,"form_goals_for":2.0,"form_goals_against":0.6,"group":"J","flag":"🇩🇿","key_players":["I. Mahrez (RW)","Y. Benrahma (LW)","S. Feghouli (AM)","D. Benlamri (CB)","R. M'Bolhi (GK)"]},
+  "Bosnia and Herzegovina":{"form_points":1.3,"form_goals_for":1.4,"form_goals_against":1.2,"group":"B","flag":"🇧🇦","key_players":["E. Džeko (ST)","M. Pjanić (CM)","D. Šunjić (DM)","N. Šunjić (CB)","I. Šehić (GK)"]},
+  "Paraguay":{"form_points":1.2,"form_goals_for":1.2,"form_goals_against":1.4,"group":"D","flag":"🇵🇾","key_players":["M. Almiron (AM)","R. Sanabria (ST)","G. Gómez (CB)","J. Espino (LB)","A. Silva (GK)"]},
+  "Qatar":{"form_points":0.9,"form_goals_for":0.9,"form_goals_against":1.3,"group":"B","flag":"🇶🇦","key_players":["A. Ali (ST)","A. Afif (AM)","B. Al-Harthi (GK)","P. Hassan (LW)","Homam Ahmed (CM)"]},
+  "Cape Verde":{"form_points":1.4,"form_goals_for":1.5,"form_goals_against":1.2,"group":"H","flag":"🇨🇻","key_players":["P. Gomes (ST)","R. Andrade (RW)","K. Lopes (CM)","A. Semedo (CB)","M. Lélis (LW)"]},
+  "Tunisia":{"form_points":1.0,"form_goals_for":1.0,"form_goals_against":1.5,"group":"F","flag":"🇹🇳","key_players":["W. Khazri (AM)","N. Sliti (RW)","Y. Meriah (CB)","D. Bronn (CB)","A. Dahmen (GK)"]},
+  "Iraq":{"form_points":1.3,"form_goals_for":1.1,"form_goals_against":1.1,"group":"I","flag":"🇮🇶","key_players":["A. Hussein (ST)","M. Al-Tamari (RW)","A. Al-Rawni (CM)","A. Hamid (GK)","B. Samir (CB)"]},
+  "Haiti":{"form_points":1.1,"form_goals_for":1.0,"form_goals_against":1.2,"group":"C","flag":"🇭🇹","key_players":["K. Antoine (ST)","O. Pétion (CM)","G. Herold Jr. (LW)","P. Cirano (GK)","L. Voltaire (CB)"]},
+  "Jordan":{"form_points":1.2,"form_goals_for":1.1,"form_goals_against":1.3,"group":"J","flag":"🇯🇴","key_players":["Y. Al-Naimat (ST)","O. Al-Rikabi (RW)","H. Shelbaieh (CM)","Y. Nasib (CB)","A. Shboul (GK)"]},
+  "Ivory Coast":{"form_points":1.9,"form_goals_for":2.0,"form_goals_against":0.9,"group":"E","flag":"🇨🇮","key_players":["S. Haller (ST)","N. Pépé (RW)","F. Koné (CM)","E. Bailly (CB)","Y. Fofana (LW)"]},
+  "New Zealand":{"form_points":0.6,"form_goals_for":0.8,"form_goals_against":1.6,"group":"G","flag":"🇳🇿","key_players":["C. Wood (ST)","J. Roughan (CB)","L. Cacace (LB)","T. Waine (RW)","O. Sail (GK)"]},
+  "DR Congo":{"form_points":1.4,"form_goals_for":1.2,"form_goals_against":0.8,"group":"K","flag":"🇨🇩","key_players":["C. Mbemba (CB)","F. Bola (LB)","H. Bongonda (LW)","Y. Bolasie (RW)","D. Nlandu (ST)"]},
+  "Uzbekistan":{"form_points":1.2,"form_goals_for":1.1,"form_goals_against":1.2,"group":"K","flag":"🇺🇿","key_players":["E. Shomurodov (ST)","O. Alijonov (AM)","J. Khamdamov (CM)","A. Ismoilov (RW)","I. Nishonov (GK)"]},
+  "Curaçao":{"form_points":1.0,"form_goals_for":1.5,"form_goals_against":2.2,"group":"E","flag":"🇨🇼","key_players":["M. Martina (CB)","G. Kastaneer (LW)","J. Turgott (ST)","F. Cova (CM)","E. Hinteregger (GK)"]},
+};
+
+const RESULTS_2026 = [
+  {date:"Jun 11",h:"Mexico",hs:2,as:0,a:"South Africa",group:"A"},
+  {date:"Jun 12",h:"South Korea",hs:2,as:1,a:"Czech Republic",group:"A"},
+  {date:"Jun 12",h:"Canada",hs:1,as:1,a:"Bosnia and Herzegovina",group:"B"},
+  {date:"Jun 13",h:"United States",hs:4,as:1,a:"Paraguay",group:"D"},
+  {date:"Jun 13",h:"Qatar",hs:1,as:1,a:"Switzerland",group:"B"},
+  {date:"Jun 13",h:"Brazil",hs:1,as:1,a:"Morocco",group:"C"},
+  {date:"Jun 14",h:"Haiti",hs:0,as:1,a:"Scotland",group:"C"},
+  {date:"Jun 14",h:"Australia",hs:2,as:0,a:"Turkey",group:"D"},
+  {date:"Jun 14",h:"Germany",hs:7,as:1,a:"Curaçao",group:"E"},
+  {date:"Jun 14",h:"Netherlands",hs:2,as:2,a:"Japan",group:"F"},
+  {date:"Jun 15",h:"Ivory Coast",hs:1,as:0,a:"Ecuador",group:"E"},
+  {date:"Jun 15",h:"Sweden",hs:5,as:1,a:"Tunisia",group:"F"},
+  {date:"Jun 15",h:"Spain",hs:0,as:0,a:"Cape Verde",group:"H"},
+  {date:"Jun 15",h:"Egypt",hs:1,as:1,a:"Belgium",group:"G"},
+  {date:"Jun 15",h:"Saudi Arabia",hs:1,as:1,a:"Uruguay",group:"H"},
+  {date:"Jun 16",h:"Iran",hs:2,as:2,a:"New Zealand",group:"G"},
+];
+
+const GROUPS_2026 = {
+  A:["Mexico","South Korea","Czech Republic","South Africa"],
+  B:["Canada","Qatar","Switzerland","Bosnia and Herzegovina"],
+  C:["Brazil","Morocco","Scotland","Haiti"],
+  D:["United States","Australia","Turkey","Paraguay"],
+  E:["Germany","Ivory Coast","Ecuador","Curaçao"],
+  F:["Netherlands","Japan","Sweden","Tunisia"],
+  G:["Denmark","Egypt","Belgium","Poland"],
+  H:["Spain","Uruguay","Saudi Arabia","Cape Verde"],
+  I:["France","Senegal","Norway","Iraq"],
+  J:["Argentina","Algeria","Austria","Jordan"],
+  K:["Portugal","Colombia","DR Congo","Uzbekistan"],
+  L:["England","Italy","Croatia","Ghana"],
+};
+
+function computeStandings() {
+  const pts = {}, gf = {}, ga = {};
+  RESULTS_2026.forEach(r => {
+    [r.h, r.a].forEach(t => { if (!(t in pts)) { pts[t]=0; gf[t]=0; ga[t]=0; } });
+    gf[r.h]+=r.hs; ga[r.h]+=r.as;
+    gf[r.a]+=r.as; ga[r.a]+=r.hs;
+    if (r.hs>r.as) pts[r.h]+=3;
+    else if (r.hs<r.as) pts[r.a]+=3;
+    else { pts[r.h]+=1; pts[r.a]+=1; }
+  });
+  return {pts,gf,ga};
+}
+
+function softmax(z){const m=Math.max(...z);const e=z.map(v=>Math.exp(v-m));const s=e.reduce((a,b)=>a+b,0);return e.map(v=>v/s);}
+function getForm(t){return WC_TEAMS_2026[t]||{form_points:1.0,form_goals_for:1.0,form_goals_against:1.0};}
+function predict(h,a,neu){
+  const hf=getForm(h),af=getForm(a);
+  const raw=[hf.form_points,hf.form_goals_for,hf.form_goals_against,af.form_points,af.form_goals_for,af.form_goals_against,neu?1:0];
+  const x=raw.map((v,i)=>(v-LOGIT.mean[i])/LOGIT.scale[i]);
+  const scores=LOGIT.coef.map((row,c)=>{let s=LOGIT.intercept[c];row.forEach((c2,i)=>s+=c2*x[i]);return s;});
+  return softmax(scores);
+}
+
+const teamList = Object.keys(WC_TEAMS_2026).sort((a,b)=>a.localeCompare(b));
+const s1=document.getElementById('t1'), s2=document.getElementById('t2');
+teamList.forEach(t=>{
+  const f=WC_TEAMS_2026[t]?.flag||'';
+  [s1,s2].forEach(s=>{const o=document.createElement('option');o.value=t;o.textContent=f+' '+t;s.appendChild(o);});
+});
+s1.value='United States'; s2.value='Argentina';
+s1.addEventListener('change',updateLineup);
+s2.addEventListener('change',updateLineup);
+
+function updateLineup(){
+  const t1=s1.value, t2=s2.value;
+  const d1=WC_TEAMS_2026[t1], d2=WC_TEAMS_2026[t2];
+  document.getElementById('l1-title').textContent=(d1?.flag||'')+' '+t1+(d1?.group?' · Group '+d1.group:'');
+  document.getElementById('l2-title').textContent=(d2?.flag||'')+' '+t2+(d2?.group?' · Group '+d2.group:'');
+  const p1=d1?.key_players||[], p2=d2?.key_players||[];
+  document.getElementById('l1-players').innerHTML=p1.map(p=>`<div class="player-row">• <span>${p}</span></div>`).join('')||'<div class="player-row">No data</div>';
+  document.getElementById('l2-players').innerHTML=p2.map(p=>`<div class="player-row">• <span>${p}</span></div>`).join('')||'<div class="player-row">No data</div>';
+}
+updateLineup();
+
+function runPredict(){
+  const h=s1.value, a=s2.value, neu=document.getElementById('neutral').checked;
+  if(h===a){alert('Pick two different teams.');return;}
+  const [pH,pD,pA]=predict(h,a,neu);
+  document.getElementById('result-area').style.display='block';
+  document.getElementById('result-title').textContent=`${WC_TEAMS_2026[h]?.flag||''} ${h} vs ${WC_TEAMS_2026[a]?.flag||''} ${a}`;
+  document.getElementById('h-label').textContent=h;
+  document.getElementById('a-label').textContent=a;
+  document.getElementById('h-bar').style.width=(pH*100)+'%';
+  document.getElementById('d-bar').style.width=(pD*100)+'%';
+  document.getElementById('a-bar').style.width=(pA*100)+'%';
+  document.getElementById('h-pct').textContent=(pH*100).toFixed(1)+'%';
+  document.getElementById('d-pct').textContent=(pD*100).toFixed(1)+'%';
+  document.getElementById('a-pct').textContent=(pA*100).toFixed(1)+'%';
+  const max=Math.max(pH,pD,pA);
+  let v='';
+  if(max===pH)v=`<strong>${h}</strong> is favored to win.`;
+  else if(max===pA)v=`<strong>${a}</strong> is favored to win.`;
+  else v=`A <strong>draw</strong> is the most likely single outcome.`;
+  document.getElementById('verdict').innerHTML=v;
+  document.getElementById('ai-out').innerHTML='';
+}
+
+async function getAIAnalysis(){
+  const h=s1.value,a=s2.value;
+  if(!h||!a||h===a)return;
+  const [pH,pD,pA]=predict(h,a,document.getElementById('neutral').checked);
+  const d1=WC_TEAMS_2026[h],d2=WC_TEAMS_2026[a];
+  const out=document.getElementById('ai-out');
+  out.innerHTML='<span class="ai-loading">Analyzing matchup...</span>';
+  const prompt=`You are a football analyst for the 2026 World Cup. Analyze this matchup in 3-4 concise sentences:
+
+${h} (Group ${d1?.group||'?'}) vs ${a} (Group ${d2?.group||'?'})
+Key players: ${h}: ${(d1?.key_players||[]).join(', ')} | ${a}: ${(d2?.key_players||[]).join(', ')}
+Model odds: ${h} win ${(pH*100).toFixed(0)}% · Draw ${(pD*100).toFixed(0)}% · ${a} win ${(pA*100).toFixed(0)}%
+Recent WC 2026 context: ${h} form points ${d1?.form_points||1}, ${a} form points ${d2?.form_points||1}
+
+Give a tactical preview covering: key player battle, tactical matchup, and one prediction. Be specific and concise.`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data=await r.json();
+    const txt=data.content?.map(c=>c.text||'').join('');
+    out.textContent=txt||'Could not generate analysis. (This button needs an API key when run outside Claude.)';
+  }catch(e){out.textContent='Analysis unavailable when opened as a local file (needs an API key).';}
+}
+
+function renderStandings(){
+  const {pts,gf,ga}=computeStandings();
+  const grid=document.getElementById('standings-grid');
+  grid.innerHTML='';
+  Object.entries(GROUPS_2026).forEach(([g,teams])=>{
+    const sorted=[...teams].sort((a,b)=>{
+      const pdiff=(pts[b]||0)-(pts[a]||0);
+      if(pdiff!==0)return pdiff;
+      return ((gf[b]||0)-(ga[b]||0))-((gf[a]||0)-(ga[a]||0));
+    });
+    const el=document.createElement('div');
+    el.className='group-card';
+    const maxPts=pts[sorted[0]]||0;
+    el.innerHTML=`<div class="group-title">Group ${g}</div>`+sorted.map((t,i)=>{
+      const p=pts[t]||0, f=WC_TEAMS_2026[t]?.flag||'';
+      const isLeader=i===0&&maxPts>0;
+      return `<div class="group-team"><span>${f} ${t.length>14?t.substring(0,13)+'…':t}</span><span class="team-pts ${isLeader?'leader':''}">${p} pts</span></div>`;
+    }).join('');
+    grid.appendChild(el);
+  });
+}
+
+function renderResults(){
+  const list=document.getElementById('results-list');
+  list.innerHTML='';
+  let lastDate='';
+  [...RESULTS_2026].reverse().forEach(r=>{
+    if(r.date!==lastDate){
+      const dh=document.createElement('div');
+      dh.className='date-header';
+      dh.textContent=r.date+' 2026';
+      list.appendChild(dh);
+      lastDate=r.date;
+    }
+    const winner=r.hs>r.as?'home':r.as>r.hs?'away':'draw';
+    const el=document.createElement('div');
+    el.className='result-item';
+    const hf=WC_TEAMS_2026[r.h]?.flag||'', af=WC_TEAMS_2026[r.a]?.flag||'';
+    el.innerHTML=`<span class="result-team ${winner==='home'?'winner':''}">${hf} ${r.h}</span><span class="result-score">${r.hs} – ${r.as}</span><span class="result-team ${winner==='away'?'winner':''}" style="text-align:right">${r.a} ${af}</span>`;
+    list.appendChild(el);
+  });
+}
+
+function renderTournament(){
+  const teams=Object.entries(WC_TEAMS_2026)
+    .sort((a,b)=>b[1].form_points-a[1].form_points)
+    .slice(0,10);
+  document.getElementById('tournament-content').innerHTML=
+    '<div class="results-list">'+teams.map((t,i)=>
+      `<div class="result-item"><span>${i+1}. ${t[1].flag} ${t[0]}</span><span>${(15-i).toFixed(1)}% title odds</span></div>`
+    ).join('')+'</div><div style="margin-top:12px;font-size:13px;color:var(--color-text-secondary)">Demo ranking by recent form; not a real simulation.</div>';
+}
+
+function showTab(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='standings')renderStandings();
+  if(name==='results')renderResults();
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab)));
+document.getElementById('predict-btn').addEventListener('click',runPredict);
+document.getElementById('ai-btn').addEventListener('click',getAIAnalysis);
+
+runPredict(); renderTournament();
+</script>
+</body>
+</html>
